@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 
 from src.entity.image import Image
-from src.entity.point import GeoPoint
+from src.entity.point import GeoPoint, ImagePoint
 
 
 class GeoBaseService(ABC):
@@ -46,7 +46,7 @@ class GeoService(GeoBaseService):
         self,
         control_geo_point: GeoPoint,
         azimuth: float,
-        control_image_point: Image,
+        control_image_point: ImagePoint,
     ) -> GeoPoint:
         pixel_offset = self._calculate_pixel_offset(
             self._image, control_image_point
@@ -61,14 +61,14 @@ class GeoService(GeoBaseService):
     @staticmethod
     def _calculate_pixel_offset(
         image: Image,
-        control_image_point: Image,
+        control_image_point: ImagePoint,
     ) -> Tuple[float, float]:
         """
         Обчислює зсув у пікселях між центром зображення та контрольною точкою.
         """
         return (
-            control_image_point.center.x - image.center.x,
-            control_image_point.center.y - image.center.y,
+            control_image_point.x - image.center.x,
+            control_image_point.y - image.center.y,
         )
 
     def _convert_pixels_to_meters(
