@@ -22,7 +22,7 @@ class GeoPoint:
         return hash((self.latitude, self.longitude))
 
     def __str__(self) -> str:
-        return f"Point({self.latitude}, {self.longitude})"
+        return f"{self.latitude}, {self.longitude}"
 
 
 class ImagePoint:
@@ -43,4 +43,4 @@ class ImagePoint:
         return hash((self.x, self.y))
 
     def __str__(self) -> str:
-        return f"Point({self.x}, {self.y})"
+        return f"{self.x}, {self.y}"
