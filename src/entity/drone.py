@@ -1,4 +1,12 @@
+import logging
+from typing import Optional
+
+from dronekit import LocationGlobalRelative, VehicleMode
+from dronekit_sitl import SITL
+
 from src.entity.exceptions import AzimuthException
+
+logger = logging.getLogger(__name__)
 
 
 class Drone:
@@ -6,8 +14,23 @@ class Drone:
     Клас, що представляє дрон з певними координатами та напрямком.
     """
 
-    def __init__(self, azimuth: float = 335) -> None:
+    def __init__(
+        self,
+        home_point: Optional[LocationGlobalRelative],
+        mode: Optional[str],
+        azimuth: Optional[float] = 335,
+    ) -> None:
         self._azimuth = azimuth
+        self._vehicle = None
+        self._mode = VehicleMode(mode) if mode else VehicleMode("ALT_HOLD")
+        self._home_point = home_point or LocationGlobalRelative(
+            50.450739, 30.461242
+        )
+
+    @property
+    def turn_on(self) -> bool:
+        if not self._vehicle:
+            self._install_home_point()
 
     @property
     def azimuth(self) -> float:
@@ -20,3 +43,16 @@ class Drone:
                 "Азимут повинен бути в діапазоні від 0 до 360"
             )
         self._azimuth = azimuth
+
+    def _install_home_point(self) -> None:
+        logger.info("Встановлення координат точки взлету")
+
+        sitl = SITL()
+        sitl.download("copter", "stable", verbose=True)
+        sitl_args = [
+            "-I0",
+            "--model",
+            "quad",
+            f"--home={self._home_point.lat},{self._home_point.lon},0,0",
+        ]
+        sitl.launch(sitl_args, await_ready=True, restart=True)
