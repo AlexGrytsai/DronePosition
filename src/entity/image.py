@@ -1,4 +1,4 @@
-from src.entity import ImagePoint
+from src.entity.point import ImagePoint
 
 
 class Image:
