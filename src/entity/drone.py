@@ -27,6 +27,7 @@ class Drone:
         self._home_point = home_point or LocationGlobalRelative(
             50.450739, 30.461242
         )
+        self._ready_to_fly = False
 
     def turn_on(self) -> bool:
         if not self._vehicle:
@@ -62,8 +63,27 @@ class Drone:
         while not self._vehicle.armed:
             logger.info("Очікування на запуск моторів...")
             time.sleep(1)
-        logger.info("Мотори запущено")
+        logger.info("Мотори запущено. Дрон готовий до польоту.")
 
+        self._ready_to_fly = True
+        return True
+
+    def takeoff(self, target_altitude: float = 100) -> bool:
+        if not self._ready_to_fly:
+            logger.warning("Дрон не готовий до польоту")
+            return False
+        while True:
+            current_altitude = self._vehicle.location.global_relative_frame.alt
+            if current_altitude >= target_altitude * 0.85:
+                self._vehicle.channels.overrides["3"] = 1800
+            self._vehicle.channels.overrides["3"] = 2500
+
+            logger.info(f"Altitude: {current_altitude}")
+            if current_altitude >= target_altitude * 0.95:
+                logger.info(f"Reached target altitude - {current_altitude}")
+                self._vehicle.channels.overrides["3"] = 1500
+                break
+            time.sleep(1)
         return True
 
     @property
