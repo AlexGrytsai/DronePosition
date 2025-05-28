@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Optional
 
 from dronekit import LocationGlobalRelative, VehicleMode, connect
@@ -44,6 +45,22 @@ class Drone:
             f"Дрон увімкнено. "
             f"Домашня точка: {self._vehicle.location.global_frame}"
         )
+        return True
+
+    def arm_vehicle(self) -> bool:
+        logger.info("Запусків моторів...")
+
+        while not self._vehicle.is_armable:
+            logger.info("Очікування на готовність до польоту...")
+            time.sleep(1)
+
+        self._vehicle.armed = True
+
+        while not self._vehicle.armed:
+            logger.info("Очікування на запуск моторів...")
+            time.sleep(1)
+        logger.info("Мотори запущено")
+
         return True
 
     @property
