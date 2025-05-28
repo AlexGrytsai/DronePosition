@@ -2,7 +2,7 @@ import logging
 import time
 from typing import Optional
 
-from dronekit import LocationGlobalRelative, VehicleMode, connect
+from dronekit import LocationGlobalRelative, VehicleMode, connect, Vehicle
 from dronekit_sitl import SITL
 
 from src.entity.exceptions import AzimuthException
@@ -22,7 +22,7 @@ class Drone:
         azimuth: Optional[float] = 335,
     ) -> None:
         self._azimuth = azimuth
-        self._vehicle = None
+        self._vehicle: Optional[Vehicle] = None
         self._mode = VehicleMode(mode) if mode else VehicleMode("ALT_HOLD")
         self._home_point = home_point or LocationGlobalRelative(
             50.450739, 30.461242
@@ -74,14 +74,12 @@ class Drone:
             return False
         while True:
             current_altitude = self._vehicle.location.global_relative_frame.alt
-            if current_altitude >= target_altitude * 0.85:
-                self._vehicle.channels.overrides["3"] = 1800
-            self._vehicle.channels.overrides["3"] = 2500
+            self._vehicle.channels.overrides["3"] = 3000
 
             logger.info(f"Altitude: {current_altitude}")
             if current_altitude >= target_altitude * 0.95:
                 logger.info(f"Reached target altitude - {current_altitude}")
-                self._vehicle.channels.overrides["3"] = 1500
+                self._vehicle.channels.overrides["3"] = 1800
                 break
             time.sleep(1)
         return True
@@ -110,3 +108,10 @@ class Drone:
             f"--home={self._home_point.lat},{self._home_point.lon},0,0",
         ]
         sitl.launch(sitl_args, await_ready=True, restart=True)
+
+
+if __name__ == "__main__":
+    dron = Drone()
+    dron.turn_on()
+    dron.arm_vehicle()
+    dron.takeoff()
