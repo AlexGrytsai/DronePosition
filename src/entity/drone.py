@@ -17,8 +17,8 @@ class Drone:
 
     def __init__(
         self,
-        home_point: Optional[LocationGlobalRelative],
-        mode: Optional[str],
+        home_point: Optional[LocationGlobalRelative] = None,
+        mode: Optional[str] = None,
         azimuth: Optional[float] = 335,
     ) -> None:
         self._azimuth = azimuth
