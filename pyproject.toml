@@ -13,6 +13,8 @@ package-mode = false
 python = "^3.12"
 black = "^25.1.0"
 flake8 = "^7.2.0"
+dronekit = {git = "https://github.com/dronekit/dronekit-python.git"}
+dronekit-sitl = {git = "https://github.com/dronekit/dronekit-sitl.git"}
 
 
 [build-system]
