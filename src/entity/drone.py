@@ -48,6 +48,9 @@ class Drone:
         return True
 
     def arm_vehicle(self) -> bool:
+        if not self._vehicle:
+            logger.warning("Дрон не підключено")
+            return False
         logger.info("Запусків моторів...")
 
         while not self._vehicle.is_armable:
