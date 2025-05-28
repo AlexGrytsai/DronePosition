@@ -34,8 +34,10 @@ class Drone:
             self._vehicle = connect(
                 "tcp:127.0.0.1:5762", wait_ready=True, heartbeat_timeout=60
             )
+            self._vehicle.mode = self._mode
+
             logger.info(
-                f"Підключення успішне. "
+                f"Підключення успішне. Режим польоту: {self._mode}"
                 f"Домашня точка: {self._vehicle.location.global_frame}"
             )
         logger.info(
