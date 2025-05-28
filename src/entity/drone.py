@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from dronekit import LocationGlobalRelative, VehicleMode
+from dronekit import LocationGlobalRelative, VehicleMode, connect
 from dronekit_sitl import SITL
 
 from src.entity.exceptions import AzimuthException
@@ -27,10 +27,22 @@ class Drone:
             50.450739, 30.461242
         )
 
-    @property
     def turn_on(self) -> bool:
         if not self._vehicle:
+            logger.info("Підключення до дрону...")
             self._install_home_point()
+            self._vehicle = connect(
+                "tcp:127.0.0.1:5762", wait_ready=True, heartbeat_timeout=60
+            )
+            logger.info(
+                f"Підключення успішне. "
+                f"Домашня точка: {self._vehicle.location.global_frame}"
+            )
+        logger.info(
+            f"Дрон увімкнено. "
+            f"Домашня точка: {self._vehicle.location.global_frame}"
+        )
+        return True
 
     @property
     def azimuth(self) -> float:
