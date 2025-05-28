@@ -25,6 +25,11 @@ class NavigateBaseService(ABC):
         """Повертає відстань від поточної точки до цільової точки."""
         pass
 
+    @staticmethod
+    @abstractmethod
+    def get_turn_direction(current_yaw, target_yaw) -> bool:
+        pass
+
 
 class NavigateService(NavigateBaseService):
     @staticmethod
@@ -67,3 +72,14 @@ class NavigateService(NavigateBaseService):
         return (
             self.EARTH_RADIUS * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         )
+
+    @staticmethod
+    def get_turn_direction(current_yaw, target_yaw) -> bool:
+        delta = (target_yaw - current_yaw + 360) % 360
+
+        if delta == 0:
+            return 0
+        elif delta <= 180:
+            return True
+        else:
+            return False
