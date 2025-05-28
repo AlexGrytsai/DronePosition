@@ -6,6 +6,7 @@ from dronekit import LocationGlobalRelative, VehicleMode, connect, Vehicle
 from dronekit_sitl import SITL
 
 from src.entity.exceptions import AzimuthException
+from src.services.navigate_service import NavigateBaseService, NavigateService
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class Drone:
         self,
         home_point: Optional[LocationGlobalRelative] = None,
         mode: Optional[str] = None,
+        navigation_service: Optional[NavigateBaseService] = None,
         azimuth: Optional[float] = 335,
     ) -> None:
         self._azimuth = azimuth
@@ -27,6 +29,7 @@ class Drone:
         self._home_point = home_point or LocationGlobalRelative(
             50.450739, 30.461242
         )
+        self._navigation_service = navigation_service or NavigateService()
         self._ready_to_fly = False
 
     def turn_on(self) -> bool:
@@ -84,6 +87,41 @@ class Drone:
             time.sleep(1)
         return True
 
+    def turn_to_target(self, target_point: LocationGlobalRelative):
+        """
+        Розвертає дрон до цільової точки.
+        """
+
+        self.azimuth = self._navigation_service.get_azimuth(
+            self._vehicle.location.global_relative_frame, target_point
+        )
+        logger.info(f"Calculated azimuth to target: {self.azimuth:.2f}°")
+
+        while True:
+            current_heading = self._vehicle.heading
+            diff = self._get_azimuth_diff(current_heading, self.azimuth)
+
+            logger.info(
+                f"Current heading: {current_heading:.2f}°, Δ={diff:.2f}°"
+            )
+
+            if abs(diff) <= 0.5:
+                self._vehicle.channels.overrides["4"] = 1500  # стоп
+                logger.info("Reached target heading precisely.")
+                break
+
+            if abs(diff) > 15:
+                power = 1530 if diff > 0 else 1470
+            elif abs(diff) > 10:
+                power = 1600 if diff > 0 else 1400
+            elif abs(diff) > 2:
+                power = 1530 if diff > 0 else 1470
+            else:
+                power = 1505 if diff > 0 else 1495
+
+            self._vehicle.channels.overrides["4"] = power
+            time.sleep(0.1)
+
     @property
     def azimuth(self) -> float:
         return self._azimuth
@@ -109,9 +147,20 @@ class Drone:
         ]
         sitl.launch(sitl_args, await_ready=True, restart=True)
 
+    @staticmethod
+    def _get_azimuth_diff(
+        current_azimuth: float, target_azimuth: float
+    ) -> float:
+        diff = (target_azimuth - current_azimuth + 360) % 360
+        return diff if diff <= 180 else diff - 360  # діапазон [-180, 180]
+
 
 if __name__ == "__main__":
     dron = Drone()
+
     dron.turn_on()
     dron.arm_vehicle()
-    dron.takeoff()
+    dron.takeoff(target_altitude=20)
+
+    target_point = LocationGlobalRelative(50.443326, 30.448078, 20)
+    dron.turn_to_target(target_point)
