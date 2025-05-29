@@ -119,12 +119,13 @@ class Drone:
     def fly_to(
         self,
         target_location: LocationGlobalRelative,
-        min_distance: float = 1.0,
+        min_distance: float = 2.0,
         power: int = 1300,
     ):
         """
         Летить до цільової точки з азимут-корекцією через 10% відстані.
         """
+        _power = power
         distance_to_target = (
             self._navigation_service.get_distance_to_destination(
                 self._vehicle.location.global_relative_frame, target_location
@@ -152,9 +153,14 @@ class Drone:
                 self.turn_to_target_point(target_location)
                 logger.info("Корекція курсу завершена")
 
-                self._move_forward(power=power)
+                if distance_to_target <= 30:
+                    _power = 1400
+                elif distance_to_target <= 50:
+                    _power = 1300
+
+                self._move_forward(power=_power)
             else:
-                self._move_forward(power=power)
+                self._move_forward(power=_power)
 
     def _move_forward(self, power: int = 1300):
         self._vehicle.channels.overrides["2"] = power
@@ -217,10 +223,7 @@ if __name__ == "__main__":
 
     target_point = LocationGlobalRelative(50.443326, 30.448078, 20)
 
-    target_point2 = LocationGlobalRelative(50.449461, 30.459243, 20)
 
-    # dron.turn_to_target_point(target_point2)
-
-    # dron.fly_to(target_point2, power=1400)
+    dron.fly_to(target_point, power=1200)
 
     dron.turn_to_target_azimuth(target_azimuth=350)
