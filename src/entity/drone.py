@@ -104,7 +104,9 @@ class Drone:
 
         while True:
             current_heading = self._vehicle.heading
-            diff = self._get_azimuth_diff(current_heading, self.azimuth)
+            diff = self._navigation_service.get_azimuth_diff(
+                current_heading, self.azimuth
+            )
 
             logger.info(
                 f"Поточний азимут: {current_heading:.2f}°, Δ={diff:.2f}°"
@@ -115,15 +117,10 @@ class Drone:
                 logger.info("Досягнуто цільового напрямку.")
                 break
 
-            if abs(diff) > 15:
-                power = 1530 if diff > 0 else 1470
-            elif abs(diff) > 10:
-                power = 1600 if diff > 0 else 1400
-            elif abs(diff) > 1:
+            if abs(diff) > 15 or abs(diff) <= 10:
                 power = 1530 if diff > 0 else 1470
             else:
-                power = 1505 if diff > 0 else 1495
-
+                power = 1600 if diff > 0 else 1400
             self._vehicle.channels.overrides["4"] = power
             time.sleep(0.1)
 
@@ -191,13 +188,6 @@ class Drone:
             f"--home={self._home_point.lat},{self._home_point.lon},0,0",
         ]
         sitl.launch(sitl_args, await_ready=True, restart=True)
-
-    @staticmethod
-    def _get_azimuth_diff(
-        current_azimuth: float, target_azimuth: float
-    ) -> float:
-        diff = (target_azimuth - current_azimuth + 360) % 360
-        return diff if diff <= 180 else diff - 360  # діапазон [-180, 180]
 
 
 if __name__ == "__main__":
