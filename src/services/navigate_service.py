@@ -30,6 +30,13 @@ class NavigateBaseService(ABC):
     def get_turn_direction(current_yaw, target_yaw) -> bool:
         pass
 
+    @staticmethod
+    @abstractmethod
+    def get_azimuth_diff(
+        current_azimuth: float, target_azimuth: float
+    ) -> float:
+        pass
+
 
 class NavigateService(NavigateBaseService):
     @staticmethod
@@ -78,8 +85,15 @@ class NavigateService(NavigateBaseService):
         delta = (target_yaw - current_yaw + 360) % 360
 
         if delta == 0:
-            return 0
+            return False
         elif delta <= 180:
             return True
         else:
             return False
+
+    @staticmethod
+    def get_azimuth_diff(
+        current_azimuth: float, target_azimuth: float
+    ) -> float:
+        diff = (target_azimuth - current_azimuth + 360) % 360
+        return diff if diff <= 180 else diff - 360  # діапазон [-180, 180]
