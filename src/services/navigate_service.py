@@ -84,12 +84,7 @@ class NavigateService(NavigateBaseService):
     def get_turn_direction(current_yaw, target_yaw) -> bool:
         delta = (target_yaw - current_yaw + 360) % 360
 
-        if delta == 0:
-            return False
-        elif delta <= 180:
-            return True
-        else:
-            return False
+        return delta != 0 and delta <= 180
 
     @staticmethod
     def get_azimuth_diff(
