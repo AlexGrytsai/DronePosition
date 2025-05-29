@@ -1,4 +1,5 @@
-from src.entity import Drone, GeoPoint, ImagePoint
+from src.entity import Drone
+from src.entity.point import GeoPoint, ImagePoint
 from src.services import GeoService
 
 
