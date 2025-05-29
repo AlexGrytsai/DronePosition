@@ -2,8 +2,15 @@ import logging
 import time
 from typing import Optional
 
-from dronekit import LocationGlobalRelative, VehicleMode, connect, Vehicle
+from dronekit import (
+    LocationGlobalRelative,
+    VehicleMode,
+    connect,
+    Vehicle,
+    Command,
+)
 from dronekit_sitl import SITL
+from pymavlink import mavutil
 
 from src.entity.exceptions import AzimuthException
 from src.services.navigate_service import NavigateBaseService, NavigateService
@@ -95,19 +102,19 @@ class Drone:
         self.azimuth = self._navigation_service.get_azimuth(
             self._vehicle.location.global_relative_frame, target_point
         )
-        logger.info(f"Calculated azimuth to target: {self.azimuth:.2f}°")
+        logger.info(f"Розрахований азимут: {self.azimuth:.2f}°")
 
         while True:
             current_heading = self._vehicle.heading
             diff = self._get_azimuth_diff(current_heading, self.azimuth)
 
             logger.info(
-                f"Current heading: {current_heading:.2f}°, Δ={diff:.2f}°"
+                f"Поточний азимут: {current_heading:.2f}°, Δ={diff:.2f}°"
             )
 
             if abs(diff) <= 0.5:
                 self._vehicle.channels.overrides["4"] = 1500  # стоп
-                logger.info("Reached target heading precisely.")
+                logger.info("Досягнуто цільового напрямку.")
                 break
 
             if abs(diff) > 15:
@@ -121,6 +128,9 @@ class Drone:
 
             self._vehicle.channels.overrides["4"] = power
             time.sleep(0.1)
+
+    def movement_forward(self, power: int = 1600):
+        self._vehicle.channels.overrides["2"] = power
 
     @property
     def azimuth(self) -> float:
@@ -163,4 +173,5 @@ if __name__ == "__main__":
     dron.takeoff(target_altitude=20)
 
     target_point = LocationGlobalRelative(50.443326, 30.448078, 20)
+    dron.add_route_point(target_point)
     dron.turn_to_target(target_point)
