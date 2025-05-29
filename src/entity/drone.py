@@ -92,6 +92,15 @@ class Drone:
             time.sleep(1)
         return True
 
+    def turn_to_target_azimuth(
+        self,
+        target_azimuth: float,
+    ) -> None:
+        logger.info(f"Поворот до азимуту: {target_azimuth:.2f}°")
+        self.azimuth = target_azimuth
+
+        self._turn_to_target_azimuth()
+
     def turn_to_target_point(
         self,
         target_point: LocationGlobalRelative,
@@ -105,32 +114,13 @@ class Drone:
         )
         logger.info(f"Розрахований азимут: {self.azimuth:.2f}°")
 
-        while True:
-            current_heading = self._vehicle.heading
-            diff = self._navigation_service.get_azimuth_diff(
-                current_heading, self.azimuth
-            )
-
-            logger.info(
-                f"Поточний азимут: {current_heading:.2f}°, Δ={diff:.2f}°"
-            )
-
-            if abs(diff) <= 1:
-                self._vehicle.channels.overrides["4"] = 1500  # стоп
-                logger.info("Досягнуто цільового напрямку.")
-                break
-
-            if abs(diff) > 15 or abs(diff) <= 10:
-                power = 1530 if diff > 0 else 1470
-            else:
-                power = 1600 if diff > 0 else 1400
-            self._vehicle.channels.overrides["4"] = power
-            time.sleep(0.1)
+        self._turn_to_target_azimuth()
 
     def fly_to(
         self,
         target_location: LocationGlobalRelative,
         min_distance: float = 1.0,
+        power: int = 1300,
     ):
         """
         Летить до цільової точки з азимут-корекцією через 10% відстані.
@@ -162,10 +152,12 @@ class Drone:
                 self.turn_to_target_point(target_location)
                 logger.info("Корекція курсу завершена")
 
-            self._move_forward()
+                self._move_forward(power=power)
+            else:
+                self._move_forward(power=power)
 
-    def _move_forward(self):
-        self._vehicle.channels.overrides["2"] = 1300
+    def _move_forward(self, power: int = 1300):
+        self._vehicle.channels.overrides["2"] = power
 
     @property
     def azimuth(self) -> float:
@@ -192,6 +184,29 @@ class Drone:
         ]
         sitl.launch(sitl_args, await_ready=True, restart=True)
 
+    def _turn_to_target_azimuth(self) -> None:
+        while True:
+            current_heading = self._vehicle.heading
+            diff = self._navigation_service.get_azimuth_diff(
+                current_heading, self.azimuth
+            )
+
+            logger.info(
+                f"Поточний азимут: {current_heading:.2f}°, Δ={diff:.2f}°"
+            )
+
+            if abs(diff) <= 1:
+                self._vehicle.channels.overrides["4"] = 1500  # стоп
+                logger.info("Досягнуто цільового напрямку.")
+                break
+
+            if abs(diff) > 15 or abs(diff) <= 10:
+                power = 1530 if diff > 0 else 1470
+            else:
+                power = 1600 if diff > 0 else 1400
+            self._vehicle.channels.overrides["4"] = power
+            time.sleep(0.1)
+
 
 if __name__ == "__main__":
     dron = Drone()
@@ -201,5 +216,11 @@ if __name__ == "__main__":
     dron.takeoff(target_altitude=20)
 
     target_point = LocationGlobalRelative(50.443326, 30.448078, 20)
-    dron.turn_to_target_point(target_point)
-    dron.fly_to(target_point)
+
+    target_point2 = LocationGlobalRelative(50.449461, 30.459243, 20)
+
+    # dron.turn_to_target_point(target_point2)
+
+    # dron.fly_to(target_point2, power=1400)
+
+    dron.turn_to_target_azimuth(target_azimuth=350)
