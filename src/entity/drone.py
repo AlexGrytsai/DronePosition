@@ -85,7 +85,7 @@ class Drone:
             self._vehicle.channels.overrides["3"] = 3000
 
             logger.info(f"Висота: {current_altitude}")
-            if current_altitude >= target_altitude * 0.95:
+            if current_altitude >= target_altitude * 0.97:
                 logger.info(f"Досягнуто потрібну висоту - {current_altitude}")
                 self._vehicle.channels.overrides["3"] = 1500
                 break
