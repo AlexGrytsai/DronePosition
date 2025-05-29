@@ -223,7 +223,6 @@ if __name__ == "__main__":
 
     target_point = LocationGlobalRelative(50.443326, 30.448078, 20)
 
-
     dron.fly_to(target_point, power=1200)
 
     dron.turn_to_target_azimuth(target_azimuth=350)
