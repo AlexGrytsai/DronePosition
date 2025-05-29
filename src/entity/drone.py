@@ -7,10 +7,8 @@ from dronekit import (
     VehicleMode,
     connect,
     Vehicle,
-    Command,
 )
 from dronekit_sitl import SITL
-from pymavlink import mavutil
 
 from src.entity.exceptions import AzimuthException
 from src.services.navigate_service import NavigateBaseService, NavigateService
@@ -86,10 +84,10 @@ class Drone:
             current_altitude = self._vehicle.location.global_relative_frame.alt
             self._vehicle.channels.overrides["3"] = 3000
 
-            logger.info(f"Altitude: {current_altitude}")
+            logger.info(f"Висота: {current_altitude}")
             if current_altitude >= target_altitude * 0.95:
-                logger.info(f"Reached target altitude - {current_altitude}")
-                self._vehicle.channels.overrides["3"] = 1800
+                logger.info(f"Досягнуто потрібну висоту - {current_altitude}")
+                self._vehicle.channels.overrides["3"] = 1500
                 break
             time.sleep(1)
         return True
@@ -112,7 +110,7 @@ class Drone:
                 f"Поточний азимут: {current_heading:.2f}°, Δ={diff:.2f}°"
             )
 
-            if abs(diff) <= 0.5:
+            if abs(diff) <= 1:
                 self._vehicle.channels.overrides["4"] = 1500  # стоп
                 logger.info("Досягнуто цільового напрямку.")
                 break
@@ -121,7 +119,7 @@ class Drone:
                 power = 1530 if diff > 0 else 1470
             elif abs(diff) > 10:
                 power = 1600 if diff > 0 else 1400
-            elif abs(diff) > 2:
+            elif abs(diff) > 1:
                 power = 1530 if diff > 0 else 1470
             else:
                 power = 1505 if diff > 0 else 1495
@@ -129,8 +127,45 @@ class Drone:
             self._vehicle.channels.overrides["4"] = power
             time.sleep(0.1)
 
-    def movement_forward(self, power: int = 1600):
-        self._vehicle.channels.overrides["2"] = power
+    def fly_to(
+        self,
+        target_location: LocationGlobalRelative,
+        min_distance: float = 1.0,
+    ):
+        """
+        Летить до цільової точки з азимут-корекцією через 10% відстані.
+        """
+        distance_to_target = (
+            self._navigation_service.get_distance_to_destination(
+                self._vehicle.location.global_relative_frame, target_location
+            )
+        )
+        logger.info(f"Відстань до цільової точки: {distance_to_target:.2f} м")
+        while True:
+            distance = self._navigation_service.get_distance_to_destination(
+                self._vehicle.location.global_relative_frame, target_location
+            )
+
+            if distance <= min_distance:
+                logger.info(
+                    f"Досягнуто цільової точки. Відстань: {distance:.2f} м"
+                )
+                self._vehicle.channels.overrides["2"] = 1500  # стоп
+                break
+
+            elif distance <= distance_to_target * 0.9:
+                self._vehicle.channels.overrides["2"] = 1500  # стоп
+                distance_to_target = distance
+                logger.info(f"Відстань до цільової точки: {distance:.2f} м")
+
+                logger.info("Корекція курсу...")
+                self.turn_to_target(target_location)
+                logger.info("Корекція курсу завершена")
+
+            self._move_forward()
+
+    def _move_forward(self):
+        self._vehicle.channels.overrides["2"] = 1300
 
     @property
     def azimuth(self) -> float:
@@ -173,5 +208,5 @@ if __name__ == "__main__":
     dron.takeoff(target_altitude=20)
 
     target_point = LocationGlobalRelative(50.443326, 30.448078, 20)
-    dron.add_route_point(target_point)
     dron.turn_to_target(target_point)
+    dron.fly_to(target_point)
