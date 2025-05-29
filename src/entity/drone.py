@@ -212,17 +212,3 @@ class Drone:
                 power = 1600 if diff > 0 else 1400
             self._vehicle.channels.overrides["4"] = power
             time.sleep(0.1)
-
-
-if __name__ == "__main__":
-    dron = Drone()
-
-    dron.turn_on()
-    dron.arm_vehicle()
-    dron.takeoff(target_altitude=20)
-
-    target_point = LocationGlobalRelative(50.443326, 30.448078, 20)
-
-    dron.fly_to(target_point, power=1200)
-
-    dron.turn_to_target_azimuth(target_azimuth=350)
