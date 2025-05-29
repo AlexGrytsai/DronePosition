@@ -92,7 +92,10 @@ class Drone:
             time.sleep(1)
         return True
 
-    def turn_to_target(self, target_point: LocationGlobalRelative):
+    def turn_to_target_point(
+        self,
+        target_point: LocationGlobalRelative,
+    ) -> None:
         """
         Розвертає дрон до цільової точки.
         """
@@ -156,7 +159,7 @@ class Drone:
                 logger.info(f"Відстань до цільової точки: {distance:.2f} м")
 
                 logger.info("Корекція курсу...")
-                self.turn_to_target(target_location)
+                self.turn_to_target_point(target_location)
                 logger.info("Корекція курсу завершена")
 
             self._move_forward()
@@ -198,5 +201,5 @@ if __name__ == "__main__":
     dron.takeoff(target_altitude=20)
 
     target_point = LocationGlobalRelative(50.443326, 30.448078, 20)
-    dron.turn_to_target(target_point)
+    dron.turn_to_target_point(target_point)
     dron.fly_to(target_point)
